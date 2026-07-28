@@ -40,7 +40,7 @@ Each future agent gets a registry entry, protected route, permissions/access gra
 
 ## Deployment
 
-Push to Git, import in Vercel, set Node.js 22 and the three Supabase environment variables plus `NEXT_PUBLIC_SITE_URL`, then configure the production Auth redirect URL. Do not set `NEXT_PUBLIC_DEVELOPMENT_PREVIEW` on Vercel. Run checks before deploying:
+For the complete Vercel, Supabase Auth URL, email-template, and verification checklist, follow [DEPLOYMENT.md](./DEPLOYMENT.md). Set Node.js 22.x and the three Supabase environment variables plus `NEXT_PUBLIC_SITE_URL`; do not set `NEXT_PUBLIC_DEVELOPMENT_PREVIEW` on Vercel. Run checks before deploying:
 
 ```bash
 npm run lint
