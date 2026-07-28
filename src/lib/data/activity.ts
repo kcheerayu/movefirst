@@ -22,7 +22,7 @@ export async function getActivity(context: AppContext, filters: ActivityFilters 
   if (filters.from) query = query.gte("created_at", `${filters.from}T00:00:00.000Z`);
   if (filters.to) query = query.lte("created_at", `${filters.to}T23:59:59.999Z`);
   const { data, error } = await query;
-  if (error) throw new Error("Unable to load activity.");
+  if (error) { console.error("move_first_activity_query_error", { code: error.code ?? null, message: error.message, details: error.details ?? null, hint: error.hint ?? null }); throw new Error("Unable to load activity."); }
   return (data as unknown as ActivityRow[]).filter(row => inScope(row, context)).filter(row => !filters.actor || row.actor_id === filters.actor);
 }
 
