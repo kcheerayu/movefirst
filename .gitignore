@@ -36,6 +36,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# Supabase CLI connection metadata can contain project connection details.
+supabase/.temp/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

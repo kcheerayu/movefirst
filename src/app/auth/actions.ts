@@ -1,0 +1,10 @@
+"use server";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+import { z } from "zod";
+import { createServerClient } from "@/lib/supabase/server";
+export type AuthFormState={error?:string;success?:string};
+const emailSchema=z.string().trim().email(), passwordSchema=z.string().min(12,"Use at least 12 characters.").max(256);
+async function appOrigin(){const h=await headers();const value=h.get("origin")??process.env.NEXT_PUBLIC_SITE_URL;if(!value)throw new Error("Application URL is not configured.");return value;}
+export async function requestPasswordReset(_previous:AuthFormState,formData:FormData):Promise<AuthFormState>{try{const email=emailSchema.parse(String(formData.get("email")??""));const supabase=await createServerClient();if(!supabase)throw new Error("Authentication is not configured.");const {error}=await supabase.auth.resetPasswordForEmail(email,{redirectTo:`${await appOrigin()}/auth/callback?next=/auth/reset-password`});if(error)throw new Error("Unable to send a recovery email.");return {success:"If an account exists for that address, a recovery link has been sent."};}catch(error){return {error:error instanceof Error?error.message:"Unable to request password reset."};}}
+export async function updatePassword(_previous:AuthFormState,formData:FormData):Promise<AuthFormState>{try{const password=passwordSchema.parse(String(formData.get("password")??""));if(password!==String(formData.get("confirmation")??""))throw new Error("Passwords do not match.");const supabase=await createServerClient();if(!supabase)throw new Error("Authentication is not configured.");const {data:{user}}=await supabase.auth.getUser();if(!user)throw new Error("Your recovery session has expired. Request another link.");const {error}=await supabase.auth.updateUser({password});if(error)throw new Error(error.message);await supabase.auth.signOut();}catch(error){return {error:error instanceof Error?error.message:"Unable to reset password."};}redirect("/login?reset=complete");}
