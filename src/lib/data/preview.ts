@@ -1,0 +1,4 @@
+import type { AppContext } from "@/lib/types";
+export const isPreviewEnabled=()=>process.env.NODE_ENV!=="production"&&process.env.NEXT_PUBLIC_DEVELOPMENT_PREVIEW==="true";
+export const previewContext:AppContext={user:{id:"preview-owner",email:"owner@movefirst.co",fullName:"Alex Morgan",title:"Founder",role:"OWNER",status:"active"},permissions:["platform.manage","members.read","members.manage","agents.read","agents.manage","clients.read","clients.manage","activity.read","operations.read"],agentSlugs:["outreach","marketing-strategy"],clientIds:["vyo-studios"],preview:true};
+export const previewActivity=[{action:"Access updated",detail:"Marketing Strategy assigned to Jordan Lee",time:"24 min ago",kind:"Permission"},{action:"Client workspace created",detail:"VYŌ Studios is ready for agent context",time:"Yesterday",kind:"Client"},{action:"Outreach integration registered",detail:"Awaiting connection to existing system",time:"Jul 24",kind:"Agent"}];

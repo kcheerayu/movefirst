@@ -1,0 +1,2 @@
+export type Permission = "platform.manage" | "members.read" | "members.manage" | "agents.read" | "agents.manage" | "clients.read" | "clients.manage" | "activity.read" | "operations.read";
+export type AppContext = { user: { id:string; email:string; fullName:string; title?:string; role:"OWNER"|"ADMIN"|"MEMBER"; status:"active"|"invited"|"disabled" }; permissions:Permission[]; agentSlugs:string[]; clientIds:string[]; preview:boolean };
