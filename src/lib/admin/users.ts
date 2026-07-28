@@ -31,6 +31,14 @@ export async function inviteUser(input: InviteUserInput, redirectTo: string) {
   });
   if (inviteError || !invite.user) rpcError(inviteError, "Unable to send invitation.");
 
+  const { error: metadataError } = await admin.auth.admin.updateUserById(invite.user.id, {
+    app_metadata: { move_first_initial_password_required: true },
+  });
+  if (metadataError) {
+    await admin.auth.admin.deleteUser(invite.user.id, false);
+    rpcError(metadataError, "Invitation could not be secured and was rolled back.");
+  }
+
   const { error: provisionError } = await admin.rpc("app_provision_invited_user", {
     target_user_id: invite.user.id,
     target_full_name: values.fullName,

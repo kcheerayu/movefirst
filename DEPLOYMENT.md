@@ -51,7 +51,17 @@ Add these Redirect URLs exactly:
 
 Replace `<your-production-domain>` only after Vercel gives you its production URL or after you attach the final custom domain. Do not add a broad production wildcard. If you later decide to test email authentication on Vercel preview deployments, add the narrowly scoped Vercel preview wildcard recommended by Supabase for your team slug; it is not required for normal production deployment.
 
-The invitation and recovery APIs pass `redirectTo`, so check the Supabase **Invite user** and **Reset password** email templates. Their link must use `{{ .RedirectTo }}` rather than a hard-coded URL or `{{ .SiteURL }}`. Keep the default templates otherwise unless you are ready to customize branding.
+## Configure the Supabase invite email template
+
+The Invite user email must send its token hash directly to the server callback. The default `{{ .ConfirmationURL }}` flow returns its session in a browser fragment, which a server-side callback cannot read.
+
+In **Authentication → Email Templates → Invite user**, set the invitation link to:
+
+```html
+<a href="{{ .RedirectTo }}?token_hash={{ .TokenHash }}&amp;type=invite">Accept invitation</a>
+```
+
+The repository keeps the complete source template in `supabase/templates/invite.html`. Do not use `{{ .ConfirmationURL }}` for this SSR callback flow. Keep recovery links on their existing server-side token-hash flow.
 
 ## Deploy and verify
 
