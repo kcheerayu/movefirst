@@ -7,6 +7,7 @@ import { createClient, updateClient } from "@/lib/admin/clients";
 const values = (formData: FormData) => ({
   slug: String(formData.get("slug") ?? ""), name: String(formData.get("name") ?? ""), website: String(formData.get("website") ?? ""),
   industry: String(formData.get("industry") ?? ""), description: String(formData.get("description") ?? ""),
+  primaryContact: String(formData.get("primaryContact") ?? ""), contactEmail: String(formData.get("contactEmail") ?? ""), contactPhone: String(formData.get("contactPhone") ?? ""),
   userIds: formData.getAll("userIds").map(String), agentIds: formData.getAll("agentIds").map(String),
 });
 export async function createClientAction(formData: FormData) {

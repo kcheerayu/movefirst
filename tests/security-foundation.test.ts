@@ -12,8 +12,8 @@ const invitationMigration=readFileSync("supabase/migrations/20260728000001_secur
 afterEach(()=>vi.unstubAllEnvs());
 describe("authorization scope",()=>{
   it("allows an assigned client only",()=>{expect(canAccessClient(active,"client-a")).toBe(true);expect(canAccessClient(active,"client-b")).toBe(false);});
-  it("does not authorize a disabled account even if direct permissions remain in context",()=>{const disabled={...active,user:{...active.user,status:"disabled" as const},permissions:["clients.manage"]};expect(hasPermission(disabled,"clients.manage")).toBe(false);expect(canAccessClient(disabled,"client-a")).toBe(false);});
-  it("allows active client managers across clients",()=>{const manager={...active,permissions:["clients.manage"]};expect(canAccessClient(manager,"another-client")).toBe(true);});
+  it("does not authorize a disabled account even if direct permissions remain in context",()=>{const disabled:AppContext={...active,user:{...active.user,status:"disabled"},permissions:["clients.manage"]};expect(hasPermission(disabled,"clients.manage")).toBe(false);expect(canAccessClient(disabled,"client-a")).toBe(false);});
+  it("allows active client managers across clients",()=>{const manager:AppContext={...active,permissions:["clients.manage"]};expect(canAccessClient(manager,"another-client")).toBe(true);});
 });
 describe("database security contract",()=>{
   it("enables RLS for every application table",()=>{for(const table of ["roles","permissions","role_permissions","profiles","user_permissions","agents","user_agent_access","clients","client_members","client_agent_access","agent_runs","agent_steps","agent_events","activity_logs"])expect(migration).toContain(`alter table public.${table} enable row level security`);});
