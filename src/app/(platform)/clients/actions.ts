@@ -11,12 +11,14 @@ const values = (formData: FormData) => ({
   userIds: formData.getAll("userIds").map(String), agentIds: formData.getAll("agentIds").map(String),
 });
 export async function createClientAction(formData: FormData) {
-  await createClient(values(formData));
+  const input = values(formData);
+  await createClient(input);
   revalidatePath("/clients");
-  redirect(`/clients/${String(formData.get("slug"))}`);
+  redirect(`/clients/${encodeURIComponent(input.slug.trim().toLowerCase())}`);
 }
 export async function updateClientAction(formData: FormData) {
-  await updateClient({ ...values(formData), id: String(formData.get("id") ?? ""), status: String(formData.get("status") ?? "active") as "active" | "inactive" | "archived" });
+  const input = values(formData);
+  await updateClient({ ...input, id: String(formData.get("id") ?? ""), status: String(formData.get("status") ?? "active") as "active" | "inactive" | "archived" });
   revalidatePath("/clients");
-  revalidatePath(`/clients/${String(formData.get("slug"))}`);
+  revalidatePath(`/clients/${encodeURIComponent(input.slug.trim().toLowerCase())}`);
 }

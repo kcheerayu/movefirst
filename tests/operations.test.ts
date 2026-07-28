@@ -25,4 +25,10 @@ describe("operational calculations", () => {
     expect(migration).toContain("public.app_create_task(text, text, uuid, uuid, uuid");
     expect(migration).toContain("to service_role");
   });
+  it("uses the persisted canonical client slug after creation", () => {
+    const action = readFileSync("src/app/(platform)/clients/actions.ts", "utf8");
+    expect(action).toContain("input.slug.trim().toLowerCase()");
+    expect(action).toContain("encodeURIComponent");
+    expect(readFileSync("src/app/(platform)/clients/[id]/page.tsx", "utf8")).toContain('.eq("slug", slug)');
+  });
 });
