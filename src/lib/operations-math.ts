@@ -1,4 +1,4 @@
-export type TaskState = "TODO" | "IN_PROGRESS" | "BLOCKED" | "DONE";
+export type TaskState = "TODO" | "IN_PROGRESS" | "SUBMITTED" | "BLOCKED" | "DONE";
 
 export function isOverdue(task: { status: TaskState; due_date: string | null }, today = new Date()) {
   if (!task.due_date || task.status === "DONE") return false;

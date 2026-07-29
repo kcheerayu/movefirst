@@ -2,6 +2,7 @@ import "server-only";
 
 import { z } from "zod";
 import { requireOwner } from "@/lib/auth/guards";
+import { requirePermission } from "@/lib/auth/context";
 import type { AppContext } from "@/lib/types";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isDueThisWeek, isOverdue, projectProgress, type TaskState } from "@/lib/operations-math";
@@ -9,7 +10,7 @@ import { isDueThisWeek, isOverdue, projectProgress, type TaskState } from "@/lib
 const nullableUuid = z.string().uuid().optional().or(z.literal(""));
 const nullableDate = z.string().date().optional().or(z.literal(""));
 const projectStatus = z.enum(["planned", "active", "on_hold", "complete", "archived"]);
-const taskStatus = z.enum(["TODO", "IN_PROGRESS", "BLOCKED", "DONE"]);
+const taskStatus = z.enum(["TODO", "IN_PROGRESS", "SUBMITTED", "BLOCKED", "DONE"]);
 const taskPriority = z.enum(["LOW", "MEDIUM", "HIGH", "URGENT"]);
 
 const projectSchema = z.object({
@@ -58,6 +59,15 @@ export async function addClientNote(clientId: string, body: string) {
   const actor = await requireOwner(); const parsedClientId = z.string().uuid().parse(clientId); const parsedBody = z.string().trim().min(1).max(8000).parse(body); const admin = createAdminClient();
   const { error } = await admin.rpc("app_create_client_note", { target_client_id: parsedClientId, target_body: parsedBody, actor_user_id: actor.user.id });
   if (error) rpcError(error, "Unable to add note.");
+}
+
+export async function submitTaskDeliverable(taskId: string, externalUrl: string, note: string) {
+  const actor = await requirePermission("clients.read");
+  const task = z.string().uuid().parse(taskId);
+  const urlValue = z.string().trim().url().max(2000).optional().or(z.literal("")).parse(externalUrl);
+  const noteValue = z.string().trim().max(8000).parse(note);
+  const { error } = await createAdminClient().rpc("app_submit_task_deliverable", { target_task_id: task, target_external_url: urlValue, target_note: noteValue, actor_user_id: actor.user.id });
+  if (error) throw new Error(error.message || "Unable to submit deliverable.");
 }
 
 function scopeClients<T extends { in: (column: string, values: string[]) => T }>(query: T, context: AppContext) {

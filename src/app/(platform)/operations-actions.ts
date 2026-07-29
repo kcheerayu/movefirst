@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { addClientNote, createProject, createTask, updateProject, updateTask } from "@/lib/operations";
+import { addClientNote, createProject, createTask, submitTaskDeliverable, updateProject, updateTask } from "@/lib/operations";
 
 const projectValues = (formData: FormData) => ({
   id: String(formData.get("id") ?? "") || undefined, clientId: String(formData.get("clientId") ?? ""), name: String(formData.get("name") ?? ""),
@@ -17,3 +17,4 @@ export async function updateProjectAction(formData: FormData) { const value = pr
 export async function createTaskAction(formData: FormData) { const value = taskValues(formData); await createTask(value); refresh(); }
 export async function updateTaskAction(formData: FormData) { const value = taskValues(formData); await updateTask(value); refresh(); }
 export async function addClientNoteAction(formData: FormData) { const clientId = String(formData.get("clientId") ?? ""); await addClientNote(clientId, String(formData.get("body") ?? "")); refresh(); }
+export async function submitTaskDeliverableAction(formData: FormData) { const taskId = String(formData.get("taskId") ?? ""); await submitTaskDeliverable(taskId, String(formData.get("externalUrl") ?? ""), String(formData.get("note") ?? "")); refresh(); }

@@ -20,6 +20,34 @@ const base = z.object({
 const createSchema = base;
 const updateSchema = base.extend({ id: z.string().uuid(), status: z.enum(["active", "inactive", "archived"]) });
 
+const simpleCreateSchema = z.object({
+  name: z.string().trim().min(2).max(160),
+  contactName: z.string().trim().min(2).max(160),
+  industry: z.string().trim().min(1).max(120),
+});
+
+export function clientSlugFromName(name: string) {
+  const normalized = name.normalize("NFKD").replace(/[\u0300-\u036f]/g, "");
+  const slug = normalized.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 110);
+  return slug || "client";
+}
+
+export async function createSimpleClient(input: unknown) {
+  const actor = await requirePermission("clients.manage");
+  const value = simpleCreateSchema.parse(input);
+  const admin = createAdminClient();
+  const { data, error } = await admin.rpc("app_create_client_simple", {
+    target_slug: clientSlugFromName(value.name),
+    target_name: value.name,
+    target_contact_name: value.contactName,
+    target_industry: value.industry,
+    actor_user_id: actor.user.id,
+  });
+  const row = Array.isArray(data) ? data[0] : data;
+  if (error || !row?.id || !row.slug) throw new Error(error?.message || "Unable to create client.");
+  return row as { id: string; slug: string };
+}
+
 export async function createClient(input: z.input<typeof createSchema>) {
   const actor = await requirePermission("clients.manage");
   const value = createSchema.parse(input);

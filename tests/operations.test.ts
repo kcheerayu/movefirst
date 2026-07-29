@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { isDueThisWeek, isOverdue, projectProgress } from "@/lib/operations-math";
+import { clientSlugFromName } from "@/lib/admin/clients";
 
 describe("operational calculations", () => {
   const today = new Date("2026-07-28T12:00:00");
@@ -30,5 +31,9 @@ describe("operational calculations", () => {
     expect(action).toContain("input.slug.trim().toLowerCase()");
     expect(action).toContain("encodeURIComponent");
     expect(readFileSync("src/app/(platform)/clients/[id]/page.tsx", "utf8")).toContain('.eq("slug", slug)');
+  });
+  it("generates simple accent-safe client slugs", () => {
+    expect(clientSlugFromName("VYŌ Studios")).toBe("vyo-studios");
+    expect(clientSlugFromName("  North & South  ")).toBe("north-south");
   });
 });

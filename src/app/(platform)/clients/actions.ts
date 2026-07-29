@@ -2,19 +2,19 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { createClient, updateClient } from "@/lib/admin/clients";
+import { createSimpleClient, updateClient } from "@/lib/admin/clients";
 
+const optional = (value: FormDataEntryValue | null) => { const text = String(value ?? "").trim(); return text === "-" ? "" : text; };
 const values = (formData: FormData) => ({
-  slug: String(formData.get("slug") ?? ""), name: String(formData.get("name") ?? ""), website: String(formData.get("website") ?? ""),
-  industry: String(formData.get("industry") ?? ""), description: String(formData.get("description") ?? ""),
-  primaryContact: String(formData.get("primaryContact") ?? ""), contactEmail: String(formData.get("contactEmail") ?? ""), contactPhone: String(formData.get("contactPhone") ?? ""),
+  slug: optional(formData.get("slug")), name: String(formData.get("name") ?? ""), website: optional(formData.get("website")),
+  industry: optional(formData.get("industry")), description: optional(formData.get("description")),
+  primaryContact: optional(formData.get("primaryContact")), contactEmail: optional(formData.get("contactEmail")), contactPhone: optional(formData.get("contactPhone")),
   userIds: formData.getAll("userIds").map(String), agentIds: formData.getAll("agentIds").map(String),
 });
 export async function createClientAction(formData: FormData) {
-  const input = values(formData);
-  await createClient(input);
+  const created = await createSimpleClient({ name: String(formData.get("name") ?? ""), contactName: String(formData.get("contactName") ?? ""), industry: String(formData.get("industry") ?? "") });
   revalidatePath("/clients");
-  redirect(`/clients/${encodeURIComponent(input.slug.trim().toLowerCase())}`);
+  redirect(`/clients/${encodeURIComponent(created.slug)}`);
 }
 export async function updateClientAction(formData: FormData) {
   const input = values(formData);

@@ -8,7 +8,7 @@ const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 const stamp = Date.now();
 const memberEmail = `move-first-operations-${stamp}@example.invalid`;
 const password = "Temporary-only-test-password-123";
-let memberId = "", memberToken = "", clientId = "", otherClientId = "", projectId = "", taskId = "";
+let memberId = "", memberToken = "", clientId = "", otherClientId = "", duplicateClientId = "", projectId = "", taskId = "";
 const serviceHeaders = { apikey: serviceKey, Authorization: `Bearer ${serviceKey}`, "Content-Type": "application/json" };
 async function request(path: string, init: RequestInit = {}, headers: Record<string, string> = serviceHeaders) { const response = await fetch(`${url}${path}`, { ...init, headers: { ...headers, ...init.headers } }); return { response, body: await response.json().catch(() => null) }; }
 
@@ -28,7 +28,7 @@ suite("operations RLS", () => {
     const login = await request("/auth/v1/token?grant_type=password", { method: "POST", body: JSON.stringify({ email: memberEmail, password }) }, { apikey: anonKey, "Content-Type": "application/json" });
     if (!login.response.ok) throw new Error("Unable to authenticate disposable operations member."); memberToken = login.body.access_token;
   });
-  afterAll(async () => { if (taskId) await request(`/rest/v1/tasks?id=eq.${taskId}`, { method: "DELETE" }); if (projectId) await request(`/rest/v1/projects?id=eq.${projectId}`, { method: "DELETE" }); if (clientId) await request(`/rest/v1/clients?id=eq.${clientId}`, { method: "DELETE" }); if (otherClientId) await request(`/rest/v1/clients?id=eq.${otherClientId}`, { method: "DELETE" }); if (memberId) await request(`/auth/v1/admin/users/${memberId}`, { method: "DELETE" }); });
+  afterAll(async () => { if (taskId) await request(`/rest/v1/tasks?id=eq.${taskId}`, { method: "DELETE" }); if (projectId) await request(`/rest/v1/projects?id=eq.${projectId}`, { method: "DELETE" }); if (clientId) await request(`/rest/v1/clients?id=eq.${clientId}`, { method: "DELETE" }); if (duplicateClientId) await request(`/rest/v1/clients?id=eq.${duplicateClientId}`, { method: "DELETE" }); if (otherClientId) await request(`/rest/v1/clients?id=eq.${otherClientId}`, { method: "DELETE" }); if (memberId) await request(`/auth/v1/admin/users/${memberId}`, { method: "DELETE" }); });
   it("returns only assigned project and task work to a MEMBER", async () => {
     const headers = { apikey: anonKey, Authorization: `Bearer ${memberToken}` };
     const projects = await request(`/rest/v1/projects?select=id&client_id=eq.${clientId}`, {}, headers);
@@ -49,5 +49,19 @@ suite("operations RLS", () => {
     const write = await request("/rest/v1/tasks", { method: "POST", body: JSON.stringify({ title: "Forbidden", client_id: clientId, creator_id: memberId }) }, headers);
     const rpc = await request("/rest/v1/rpc/app_update_task", { method: "POST", body: JSON.stringify({}) }, headers);
     expect(write.response.ok).toBe(false); expect(rpc.response.ok).toBe(false);
+  });
+  it("stores a member submission and allows the OWNER workflow to complete it", async () => {
+    const submission = await request("/rest/v1/rpc/app_submit_task_deliverable", { method: "POST", body: JSON.stringify({ target_task_id: taskId, target_external_url: "https://example.com/deliverable", target_note: "Completed and sent to client", actor_user_id: memberId }) });
+    const submitted = await request(`/rest/v1/tasks?select=status&id=eq.${taskId}`);
+    const record = await request(`/rest/v1/task_submissions?select=external_url,note,submitted_by&task_id=eq.${taskId}`);
+    const complete = await request("/rest/v1/rpc/app_update_task", { method: "POST", body: JSON.stringify({ target_task_id: taskId, target_title: "Operations task", target_description: "", target_client_id: clientId, target_project_id: projectId, target_assignee_id: memberId, target_priority: "HIGH", target_status: "DONE", target_due_date: "2026-07-30", actor_user_id: memberId }) });
+    expect(submission.response.ok).toBe(true); expect(submitted.body[0]?.status).toBe("SUBMITTED"); expect(record.body[0]).toMatchObject({ external_url: "https://example.com/deliverable", note: "Completed and sent to client", submitted_by: memberId }); expect(complete.response.ok).toBe(true);
+  });
+  it("allocates a safe suffix for duplicate simple client slugs", async () => {
+    const first = await request("/rest/v1/rpc/app_create_client_simple", { method: "POST", body: JSON.stringify({ target_slug: `duplicate-${stamp}`, target_name: "Duplicate One", target_contact_name: "Contact", target_industry: "Marketing", actor_user_id: memberId }) });
+    const second = await request("/rest/v1/rpc/app_create_client_simple", { method: "POST", body: JSON.stringify({ target_slug: `duplicate-${stamp}`, target_name: "Duplicate Two", target_contact_name: "Contact", target_industry: "Marketing", actor_user_id: memberId }) });
+    duplicateClientId = second.body?.[0]?.id;
+    expect(first.response.ok).toBe(true); expect(second.response.ok).toBe(true); expect(second.body?.[0]?.slug).toBe(`duplicate-${stamp}-2`);
+    if (first.body?.[0]?.id) await request(`/rest/v1/clients?id=eq.${first.body[0].id}`, { method: "DELETE" });
   });
 });
